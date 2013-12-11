@@ -23,7 +23,7 @@ The executable is always placed next to the source file.
 
 Platform support
 ------
-For now, Caseum supports only 386 architecture (x86).
+For now, Caseum supports only i386 architecture (x86).
 
 OS support
 ------
