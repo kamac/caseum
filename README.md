@@ -2,4 +2,4 @@ caseum
 ======
 
 compiled programming language
-proper readme incoming.
+proper readme incoming. (One day)
