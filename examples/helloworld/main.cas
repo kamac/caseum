@@ -1,0 +1,5 @@
+extern "__imp__printf",[void]printf([string])
+
+#[int]main() {
+	printf("Hello world")
+}
