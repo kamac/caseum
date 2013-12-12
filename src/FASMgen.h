@@ -24,11 +24,10 @@ private:
 	struct CodeLabel {
 		std::string name;
 		std::vector<std::string> instructions;
-		std::map<std::string, AVar> vars;
+		std::vector<std::map<std::string, AVar>> vars;
 		unsigned int varCounter, vargCounter, savedLabel;
 		unsigned int jumpCounter; // for jumps, like loops / conditionals
 		std::vector<unsigned int> jumpStack; // for closing jumps
-		std::vector<unsigned int> varStack; // for local variables
 		bool isFunction;
 	};
 	struct CodeSection {
@@ -48,6 +47,8 @@ private:
 	CodeLabel* getLabel();
 	void repositionEndJMPLabel(); // used by else cases
 	void safeDecrement(unsigned int &i);
+	AVar* getVar(const std::string &ref, CodeLabel* label);
+	unsigned int varStackSize(); // returns the amount of bytes being held by the latest stack
 public:
 	FASMGenerator();
 	~FASMGenerator();

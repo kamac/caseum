@@ -174,9 +174,9 @@ public:
 
 class FunctionAST : public CodeGen {
 	PrototypeAST* proto;
-	std::vector<CodeGen*> body;
+	std::vector<ExprAST*> body;
 public:
-	FunctionAST(PrototypeAST *proto, std::vector<CodeGen*> &body) : proto(proto), body(body) { }
+	FunctionAST(PrototypeAST *proto, std::vector<ExprAST*> &body) : proto(proto), body(body) { }
 	~FunctionAST() {
 		delete proto;
 		for (unsigned int i = 0; i < body.size(); i++)

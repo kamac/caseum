@@ -137,7 +137,7 @@ ExprAST* Parser::parseIdentifierExpr() {
 			args.push_back(Arg);
 
 			if (lexer->token == ')') break;
-			if (lexer->token != ',') return Error("Expected \")\" or \",\" in function call");
+			if (lexer->token != ',') return Error("Expected ')' or ',' in function call");
 			lexer->NextToken(); // eat ,
 		}
 	}
@@ -290,13 +290,9 @@ FunctionAST* Parser::handleFunctionDef() {
 	if (!proto) return 0;
 	// parse body
 	if (lexer->token != '{') return ErrorF("Expected {");
-	lexer->NextToken(); // eat {
-	std::vector<CodeGen*> body;
-	while (lexer->token != '}') {
-		body.push_back(handleTopLevelExpr());
-		if (lexer->token == Lexer::TOK_EOF) return ErrorF("Expected }, got EOF");
-	}
-	lexer->NextToken(); // eat }
+	bool hadErr;
+	std::vector<ExprAST*> body = parseBody(hadErr);
+	if (hadErr) return 0;
 	return new FunctionAST(proto, body);
 }
 

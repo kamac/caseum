@@ -19,7 +19,7 @@ FASMGenerator::FASMGenerator() {
 	startLabel->name = "_start";
 	startLabel->isFunction = false;
 	startLabel->jumpCounter = 32;
-	startLabel->varStack.push_back(0);
+	startLabel->vars.push_back(std::map<std::string, AVar>());
 	startLabel->instructions.push_back("call main");
 	startLabel->instructions.push_back("ret");
 
@@ -52,6 +52,25 @@ void FASMGenerator::safeDecrement(unsigned int &i) {
 
 FASMGenerator::CodeLabel* FASMGenerator::getLabel() {
 	return codeSection->labels.at(currentLabel); // only executable has non-anonymous labels
+}
+
+unsigned int FASMGenerator::varStackSize() {
+	CodeLabel* label = getLabel();
+	std::map<std::string, AVar> *v = &label->vars[label->vars.size() - 1];
+	unsigned int sum = 0;
+	for (auto it = v->begin(); it != v->end(); it++)
+		sum += it->second.type->siz;
+	return sum;
+}
+
+FASMGenerator::AVar* FASMGenerator::getVar(const std::string &ref, CodeLabel* label) {
+	// We start iterating from top to bottom, because the most local variables are the most relevant to us
+	for (int i = label->vars.size()-1; i >= 0; i--) {
+		auto it = label->vars[i].find(ref);
+		if (it != label->vars[i].end())
+			return &it->second;
+	}
+	return 0;
 }
 
 void FASMGenerator::repositionEndJMPLabel() {
@@ -101,7 +120,7 @@ void FASMGenerator::GenConst(const std::string &c) {
 
 void FASMGenerator::GenVarRef(const std::string &ref) {
 	CodeLabel *label = getLabel();
-	AVar *var = &label->vars[ref];
+	AVar *var = getVar(ref,label);
 	std::stringstream out;
 	out << "mov " << registers[registerCounter] << "," << 
 		var->type->asmtype << "[ebp" << var->posOp << var->pos << "]";
@@ -113,7 +132,7 @@ void FASMGenerator::GenVarDef(const std::string &type, const std::string &name) 
 	CodeLabel* label = getLabel();
 	AVal *v = convValTable[type];
 	label->varCounter += v->siz;
-	label->vars[name] = AVar{ v, label->varCounter, '-' };
+	label->vars[label->vars.size()-1][name] = AVar{ v, label->varCounter, '-' };
 }
 
 void FASMGenerator::GenOp(const char &op, const std::string &type) {
@@ -194,13 +213,11 @@ void FASMGenerator::GenOp(const char &op, const std::string &type) {
 
 void FASMGenerator::GenStore(const std::string &ref) {
 	CodeLabel *label = getLabel();
-	AVar *var = &label->vars[ref];
+	AVar *var = getVar(ref,label);
 	std::stringstream out;
 	safeDecrement(registerCounter);
 	out << "mov " << var->type->asmtype << "[ebp-" << var->pos << "]," << registers[registerCounter];
 	label->instructions.push_back(out.str());
-	//label->varStack.at(label->varStack.size() - 1) += var->type->siz;
-	//label->varCounter += var->type->siz;
 }
 
 void FASMGenerator::GenFunctionCall(const std::string &function) {
@@ -256,12 +273,12 @@ void FASMGenerator::GenFunctionDef(const std::string &fname, const std::vector<V
 	newLabel->varCounter = 0;
 	newLabel->isFunction = true;
 	newLabel->jumpCounter = 32;
-	newLabel->varStack.push_back(0);
+	newLabel->vars.push_back(std::map<std::string, AVar>());
 	registerCounter = 0; // eax 
 	for (unsigned int i = 0; i < args.size(); i++)
 	{
 		AVal *v = convValTable[args[i]->type];
-		newLabel->vars[args[i]->name] = AVar{ v, newLabel->vargCounter, '+' };
+		newLabel->vars[0][args[i]->name] = AVar{ v, newLabel->vargCounter, '+' };
 		newLabel->vargCounter += v->siz;
 	}
 	newLabel->savedLabel = currentLabel;
@@ -285,9 +302,9 @@ void FASMGenerator::GenCondition() {
 	out.str("");
 	out << "je ._j" << label->jumpCounter;
 	label->instructions.insert(label->instructions.begin() + label->instructions.size() - d, out.str());
+	label->vars.push_back(std::map<std::string, AVar>());
 	label->jumpStack.push_back(label->jumpCounter);
 	label->jumpCounter++;
-	label->varStack.push_back(0);
 	safeDecrement(registerCounter);
 }
 
@@ -311,8 +328,8 @@ void FASMGenerator::GenConditionEnd() {
 		repositionEndJMPLabel();
 		afterElse.erase(afterElse.begin() + afterElse.size() - 1);
 	}
-	label->varCounter -= label->varStack.at(label->varStack.size() - 1); // reduce number of local variables
-	label->varStack.erase(label->varStack.begin() + label->varStack.size() - 1); // pop saved stack
+	label->varCounter -= varStackSize(); // reduce number of occupied bytes
+	label->vars.erase(label->vars.begin() + label->vars.size() - 1); // pop all local variable definitions
 }
 
 void FASMGenerator::GenElse() {
@@ -322,6 +339,7 @@ void FASMGenerator::GenElse() {
 	size_t b = instruction.find_last_of('e');
 	unsigned int number = atoi(instruction.substr(a, b).c_str());
 	afterElse.push_back(number);
+	label->vars.push_back(std::map<std::string, AVar>());
 }
 
 void FASMGenerator::GenReturn() {
@@ -352,7 +370,7 @@ void FASMGenerator::GenConversion(const std::string &oldType, std::string &newTy
 
 void FASMGenerator::GenForInit() {
 	CodeLabel* label = getLabel();
-	label->varStack.push_back(0);
+	label->vars.push_back(std::map<std::string, AVar>());
 }
 
 void FASMGenerator::GenForConditionBegin() {
@@ -394,8 +412,8 @@ void FASMGenerator::GenForEnd() {
 	out << "._j" << v;
 	label->instructions.push_back("jmp " + out.str());
 	label->instructions.push_back(out.str() + "e:");
-	label->varCounter -= label->varStack.at(label->varStack.size() - 1); // reduce number of local variables
-	label->varStack.erase(label->varStack.begin() + label->varStack.size() - 1); // pop saved stack
+	label->varCounter -= varStackSize(); // reduce number of local variables
+	label->vars.erase(label->vars.begin() + label->vars.size() - 1); // pop all local variable definitions
 	loopLabels.erase(loopLabels.begin() + loopLabels.size() - 1);
 }
 

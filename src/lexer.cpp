@@ -165,9 +165,8 @@ void Lexer::NextToken() {
 	if (reversed) {
 		token = _NextToken(1);
 		reversed = false;
-	} else {
-		token = _NextToken(1);
 	}
+	token = _NextToken(1);
 }
 
 std::string Lexer::TokToStr(int tok) {
