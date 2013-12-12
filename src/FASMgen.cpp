@@ -20,8 +20,6 @@ FASMGenerator::FASMGenerator() {
 	startLabel->isFunction = false;
 	startLabel->jumpCounter = 32;
 	startLabel->vars.push_back(std::map<std::string, AVar>());
-	startLabel->instructions.push_back("call main");
-	startLabel->instructions.push_back("ret");
 
 	dataCounter = 32;
 	callStackSize = 0; // 0 items pushed
@@ -253,15 +251,16 @@ void FASMGenerator::GenCallArg() {
 	callStackSize += 4; // default 32-bit register size. Needs to be changed!
 }
 
-void FASMGenerator::GenExtern(const std::string &symbol, const std::string &fname) {
+void FASMGenerator::GenExtern(const std::string &symbol, const std::string &fname, bool isDeclspec) {
 	CodeLabel* label = codeSection->labels.at(0); // extern label
 	std::stringstream out;
 	out << "extrn '" << symbol << "' as " << fname << ":dword";
+	if (isDeclspec)
+		externalFunction.push_back(fname);
 	label->instructions.push_back(out.str());
-	externalFunction.push_back(fname);
 }
 
-void FASMGenerator::GenFunctionDef(const std::string &fname, const std::vector<Value*> args, const std::string &type) {
+void FASMGenerator::GenFunctionDef(const std::string &fname, const std::vector<Value*> args, const std::string &type, bool isExtern) {
 	CodeLabel *newLabel = new CodeLabel();
 	codeSection->labels.push_back(newLabel);
 	newLabel->name = fname;
@@ -273,6 +272,7 @@ void FASMGenerator::GenFunctionDef(const std::string &fname, const std::vector<V
 	newLabel->varCounter = 0;
 	newLabel->isFunction = true;
 	newLabel->jumpCounter = 32;
+	newLabel->isExternal = isExtern;
 	newLabel->vars.push_back(std::map<std::string, AVar>());
 	registerCounter = 0; // eax 
 	for (unsigned int i = 0; i < args.size(); i++)
@@ -280,6 +280,10 @@ void FASMGenerator::GenFunctionDef(const std::string &fname, const std::vector<V
 		AVal *v = convValTable[args[i]->type];
 		newLabel->vars[0][args[i]->name] = AVar{ v, newLabel->vargCounter, '+' };
 		newLabel->vargCounter += v->siz;
+	}
+	if (fname == "main") {
+		codeSection->labels[1]->instructions.push_back("call main");
+		codeSection->labels[1]->instructions.push_back("ret");
 	}
 	newLabel->savedLabel = currentLabel;
 	currentLabel = codeSection->labels.size() - 1;
@@ -442,7 +446,9 @@ void FASMGenerator::Compile(const std::string &output, const std::vector<std::st
 	code += "section \'." + codeSection->sectionName + "\' " + codeSection->attribs + "\n";
 	for (unsigned int j = 1; j < codeSection->labels.size(); j++) {
 		CodeLabel *label = codeSection->labels[j];
+		if (label->instructions.size() == 0) continue;
 		if (label->name != "") {
+			if (label->isFunction && label->isExternal) code += "public " + label->name + "\n";
 			code += label->name + ":\n";
 			if (label->isFunction) {
 				std::stringstream out;
@@ -465,18 +471,27 @@ void FASMGenerator::Compile(const std::string &output, const std::vector<std::st
 			code += label->instructions.at(n) + "\n";
 		}
 	}
+	std::string outputName = output.substr(0, output.find_last_of('.'));
+	std::string outputExt = output.substr(output.find_last_of('.')+1, output.length());
 	std::ofstream out;
 	out.open("tmp.asm");
 	out.write(code.c_str(), code.length());
 	out.close();
 	std::stringstream c;
-	c << "FASM/FASM tmp.asm tmp.o";
+	c << "FASM/FASM tmp.asm " << outputName << ".o";
 	Invoke(c.str());
 	//Delete("tmp.asm");
+	if (outputExt == "o") return; // no need to link, an .o file is all we want.
 	c.str("");
-	c << "ld tmp.o -o" << output.substr(0,output.find_last_of('.')) << APPEXT <<
+	c << "ld " << outputName << ".o -o" << outputName << APPEXT <<
 		" ../lib/CAScore/CAScore.o ../lib/libkernel32.a ../lib/libmsvcrt.a ../lib/libuser32.a";
-	for (unsigned int i = 0; i < args.size(); i++)
-		c << " ../lib/" << args[i];
+	std::string ext;
+	for (unsigned int i = 0; i < args.size(); i++) {
+		ext = args[i].substr(args[i].find_last_of('.') + 1, args[i].length());
+		if (ext == "a")
+			c << " ../lib/" << args[i];
+		else if (ext == "o")
+			c << " " << args[i];
+	}
 	Invoke(c.str());
 }

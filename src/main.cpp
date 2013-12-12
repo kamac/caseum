@@ -19,11 +19,19 @@ int main(int argc, char** argv) {
 	std::vector<std::string> compileArgs;
 	if (argc <= 1)
 		return 0;
-	for (unsigned int i = 2; i < argc; i++)
-		compileArgs.push_back(argv[i]);
+	std::string outputName = "";
+	for (unsigned int i = 2; i < argc; i++) {
+		std::string targ = argv[i];
+		if (targ.find("-o") != 0)
+			compileArgs.push_back(targ);
+		else
+			outputName = targ.substr(2, targ.size());
+	}
 	filename = argv[1];
-	//std::cout << "compile> ";
+	//std::cout << "compile> "; // for debug purposes
 	//std::cin >> filename;
+	if (outputName == "")
+		outputName = filename;
 
 	std::ifstream filehandle;
 	filename += ".cas";
@@ -53,9 +61,8 @@ int main(int argc, char** argv) {
 	for (unsigned int i = 0; i < gens.size(); i++)
 		gens[i]->GenerateCode(codeGen, &errHandler);
 
-	std::cout << "Compiling.." << std::endl;
 	if (errHandler.errCounter <= 0)
-		codeGen->Compile(filename,compileArgs);
+		codeGen->Compile(outputName,compileArgs);
 	else
 		std::cout << "Compile failed with " << errHandler.errCounter << " error(s)" << std::endl;
 	for (unsigned int i = 0; i < gens.size(); i++)

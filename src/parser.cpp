@@ -170,7 +170,7 @@ ExprAST* Parser::parseParenExpr() {
 	ExprAST* V = parseExpression();
 	if (!V) return 0;
 
-	if (lexer->token != ')') return Error("Expected \")\" in paren expression");
+	if (lexer->token != ')') return Error("Expected ')' in paren expression");
 	lexer->NextToken(); // eat )
 	return V;
 }
@@ -203,7 +203,7 @@ std::string Parser::parseType() {
 	if (lexer->token != Lexer::TOK_IDENTIFIER) return ErrorT("Expected type");
 	std::string id = lexer->tokIdentifier;
 	lexer->NextToken();
-	if (lexer->token != ']') return ErrorT("Expected ] closing type declaration");
+	if (lexer->token != ']') return ErrorT("Expected ']' closing type declaration");
 	lexer->NextToken(); // eat ]
 	return id;
 }
@@ -277,7 +277,12 @@ PrototypeAST* Parser::handleProtoDef() {
 		Error("Function " + id + " has already been declared");
 		return 0;
 	}
-	PrototypeAST *proto = new PrototypeAST(id, params, type);
+	bool isExtern = false;
+	if (lexer->token == Lexer::TOK_EXTERN) {
+		lexer->NextToken();
+		isExtern = true;
+	}
+	PrototypeAST *proto = new PrototypeAST(id, params, type, isExtern);
 	functionDefinitions[id] = proto;
 	return proto;
 }
@@ -289,7 +294,6 @@ FunctionAST* Parser::handleFunctionDef() {
 		currentFunc->associatedVars[proto->args[i]->GetName()] = proto->args[i]->GetType();
 	if (!proto) return 0;
 	// parse body
-	if (lexer->token != '{') return ErrorF("Expected {");
 	bool hadErr;
 	std::vector<ExprAST*> body = parseBody(hadErr);
 	if (hadErr) return 0;
@@ -298,6 +302,11 @@ FunctionAST* Parser::handleFunctionDef() {
 
 ExternAST* Parser::handleExternFunc() {
 	lexer->NextToken(); // eat extern directive
+	bool isDeclspec = false;
+	if (lexer->token == Lexer::TOK_IDENTIFIER && lexer->tokIdentifier == "__dll") {
+		isDeclspec = true;
+		lexer->NextToken();
+	}
 	if (lexer->token != Lexer::TOK_STRING) {
 		this->Error("Expected external function symbol"); return 0;
 	}
@@ -328,8 +337,8 @@ ExternAST* Parser::handleExternFunc() {
 		}
 	}
 	lexer->NextToken(); // eat )
-	functionDefinitions[name] = new PrototypeAST(name, argTypes, type);
-	return new ExternAST(symbol,name);
+	functionDefinitions[name] = new PrototypeAST(name, argTypes, type, true);
+	return new ExternAST(symbol,name,isDeclspec);
 }
 
 ExprAST* Parser::handleCondition() {

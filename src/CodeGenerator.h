@@ -21,9 +21,9 @@ public:
 	virtual void GenOp(const char &op, const std::string &type) { }
 	virtual void GenFunctionCall(const std::string &function) { }
 	virtual void GenStore(const std::string &ref) { }
-	virtual void GenExtern(const std::string &symbol, const std::string &fname) { }
+	virtual void GenExtern(const std::string &symbol, const std::string &fname, bool isDeclspec) { }
 	virtual void GenCallArg() { }
-	virtual void GenFunctionDef(const std::string &fname,const std::vector<Value*> args,const std::string& type) { }
+	virtual void GenFunctionDef(const std::string &fname,const std::vector<Value*> args,const std::string& type, bool isExtern) { }
 	virtual void EndFunctionDef() { }
 	virtual void GenReturn() { }
 	virtual void GenConversion(const std::string &oldType, std::string &newType) { }

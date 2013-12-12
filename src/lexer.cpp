@@ -61,13 +61,13 @@ int Lexer::_NextToken(int add) {
 		lastChar = getChar(add);
 		_NextToken(add);
 	}
-	if (isalpha(lastChar)) {
+	if (isalpha(lastChar) || lastChar == '_') {
 		// tokenize an identifier
 		tokIdentifier = "";
 		do {
 			tokIdentifier += lastChar;
 			lastChar = getChar(add);
-		} while (isalnum(lastChar));
+		} while (isalnum(lastChar) || lastChar == '_');
 		if (lastChar != '\n') codeIt += -add;
 		if (add < 0) // reverse the string if we are iterating backwards
 			tokIdentifier = std::string(tokIdentifier.rbegin(), tokIdentifier.rend());

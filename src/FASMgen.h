@@ -27,6 +27,7 @@ private:
 		std::vector<std::map<std::string, AVar>> vars;
 		unsigned int varCounter, vargCounter, savedLabel;
 		unsigned int jumpCounter; // for jumps, like loops / conditionals
+		bool isExternal; // used for generating .o files that can be reused as separate libs
 		std::vector<unsigned int> jumpStack; // for closing jumps
 		bool isFunction;
 	};
@@ -60,9 +61,9 @@ public:
 	void GenStore(const std::string &ref);
 	void GenOp(const char &op, const std::string &type);
 	void GenFunctionCall(const std::string &function);
-	void GenExtern(const std::string &symbol, const std::string &fname);
+	void GenExtern(const std::string &symbol, const std::string &fname, bool isDeclspec);
 	void GenCallArg();
-	void GenFunctionDef(const std::string &fname, const std::vector<Value*> args, const std::string &type);
+	void GenFunctionDef(const std::string &fname, const std::vector<Value*> args, const std::string &type, bool isExtern);
 	void EndFunctionDef();
 	void GenReturn();
 	void GenConversion(const std::string &oldType, std::string &newType);

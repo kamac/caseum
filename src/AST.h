@@ -127,11 +127,12 @@ public:
 
 class PrototypeAST : public CodeGen {
 	std::string name, type;
+	bool isExtern;
 public:
 	std::vector<VariableDefAST*> args;
 	std::map<std::string, std::string> associatedVars; // used by parser only
-	PrototypeAST(const std::string &name, std::vector<VariableDefAST*> args, const std::string& type)
-		: name(name), args(args), type(type) { }
+	PrototypeAST(const std::string &name, std::vector<VariableDefAST*> args,
+		const std::string& type, bool isExtern) : name(name), args(args), type(type), isExtern(isExtern) { }
 	~PrototypeAST() {
 		unsigned int s = args.size();
 		for (unsigned int i = 0; i < s; i++)
@@ -140,6 +141,7 @@ public:
 	void GenerateCode(CodeGenerator *generator, Error* errHandler) { }
 	std::string GetName() const { return name; }
 	std::string GetType() const { return type; }
+	bool IsExtern() const { return isExtern; }
 };
 
 class CallExprAST : public ExprAST {
@@ -186,7 +188,7 @@ public:
 		std::vector<CodeGenerator::Value*> vargs;
 		for (unsigned int i = 0; i < proto->args.size(); i++)
 			vargs.push_back(new CodeGenerator::Value{ proto->args[i]->GetType(), proto->args[i]->GetName() });
-		generator->GenFunctionDef(proto->GetName(), vargs, proto->GetType());
+		generator->GenFunctionDef(proto->GetName(), vargs, proto->GetType(), proto->IsExtern());
 		for (unsigned int i = 0; i < proto->args.size(); i++)
 			delete vargs[i];
 		for (unsigned int i = 0; i < body.size(); i++)
@@ -288,11 +290,12 @@ public:
 
 class ExternAST : public CodeGen {
 	std::string symbol, fname;
+	bool isDeclspec;
 public:
-	ExternAST(const std::string &symbol, const std::string &fname)
-		: symbol(symbol), fname(fname) { }
+	ExternAST(const std::string &symbol, const std::string &fname, bool isDeclspec)
+		: symbol(symbol), fname(fname) , isDeclspec(isDeclspec) { }
 	void GenerateCode(CodeGenerator *generator, Error* errHandler) {
-		generator->GenExtern(symbol,fname);
+		generator->GenExtern(symbol,fname,isDeclspec);
 	}
 };
 
