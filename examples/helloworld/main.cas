@@ -1,4 +1,4 @@
-extern "__imp__printf",[void]printf([string])
+import "../include/stdio"
 
 #[int]main() {
 	printf("Hello world")

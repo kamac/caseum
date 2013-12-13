@@ -335,6 +335,7 @@ ExternAST* Parser::handleExternFunc() {
 		if (lexer->token != ',' && lexer->token != ')') {
 			Error("Expected ','"); return 0;
 		}
+		if (lexer->token == ',') lexer->NextToken();
 	}
 	lexer->NextToken(); // eat )
 	functionDefinitions[name] = new PrototypeAST(name, argTypes, type, true);
