@@ -3,7 +3,7 @@ CASEUM LANGUAGE
 
 About
 ------
-Caseum is a quite basic language. It's original reason for development was to simply learn how to code a lexer, parser & some simple code generator from scratch. Development started in december, 2013 by kamac.
+Caseum is a quite basic language. It's original reason for development was to simply learn how to code a lexer, parser & some simple code generator from scratch. Development started in december, 2013 by kamac. If it's updated, then only from time-to-time, as this is a very much of an educational side-project.
 
 If you want, you can have a peek at how does the language syntax look like. Just browse the examples/ folder.
 
@@ -11,9 +11,10 @@ Compiling
 ------
 The compiler at the moment compiles to native executables. The parameters when invoking it are as follows:
 ```
-caseum filename [additionalLibs]
+caseum source [additionalLibs] [options]
 ```
-It's optional to include additional libraries.
+[additionalLibs] - for example: libmsvcrt.a libkernel32.a
+[options] - currently only output file. Supporting -osomeName.exe and -osomeName.o
 
 For example, this is how one would compile the helloworld example program:
 ```
@@ -23,7 +24,7 @@ The executable is always placed next to the source file.
 
 Platform support
 ------
-For now, Caseum supports only i386 architecture (x86).
+Caseum supports only i386 architecture (x86). (At the moment)
 
 OS support
 ------
