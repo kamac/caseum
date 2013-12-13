@@ -44,6 +44,6 @@ TODO list
 - [ ] Add custom types
 - [ ] Enhance error reporting (also, general parser enhancements)
 - [ ] Introduce some sort of optimizer (?)
-- [ ] Allow to generate .o files & reuse them within other apps
+- [x] Allow to generate .o files & reuse them within other apps
 - [ ] Add some more examples, exposing all the features
 - [ ] Enhance library system (?)
