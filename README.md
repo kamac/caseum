@@ -13,12 +13,12 @@ The compiler at the moment compiles to native executables. The parameters when i
 ```
 caseum source [additionalLibs] [options]
 ```
-[additionalLibs] - for example: libmsvcrt.a libkernel32.a
-[options] - currently only output file. Supporting -osomeName.exe and -osomeName.o
-
+[additionalLibs] - for example: libmsvcrt.a libkernel32.a  
+[options] - currently only output file. Supporting -osomeName.exe and -osomeName.o  
+  
 For example, this is how one would compile the helloworld example program:
 ```
-caseum ../examples/helloworld/main
+caseum ../examples/helloworld/main libmsvcrt.a -ohelloworld.exe
 ```
 The executable is always placed next to the source file.
 
