@@ -1,0 +1,14 @@
+import "../include/stdio"
+
+#[int]fib([int]value) {
+	if(value < 2) {
+		return 1
+	} else {
+		return fib(value-1) + value
+	}
+}
+
+#[int]main() {
+	[int]value = 4
+	printf("fib(%i) = %i", value, fib(value))
+}
