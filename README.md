@@ -50,7 +50,7 @@ FASM/FASM.exe - FASM compiler
 
 Platform support
 ------
-Caseum supports only i386 architecture (x86). (At the moment)
+Caseum supports only i386 architecture (x86).
 
 OS support
 ------
